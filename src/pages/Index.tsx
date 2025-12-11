@@ -31,16 +31,28 @@ const Index = () => {
   const speak = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ru-RU';
-    utterance.rate = 0.9;
-    utterance.pitch = 0.85;
+    utterance.rate = 0.85;
+    utterance.pitch = 0.75;
+    utterance.volume = 1.0;
     
     const voices = speechSynthesis.getVoices();
-    const russianVoice = voices.find(voice => 
-      voice.lang.includes('ru-RU') || voice.lang.includes('ru') || voice.name.includes('Russian')
+    const maleVoice = voices.find(voice => 
+      (voice.lang.includes('ru-RU') || voice.lang.includes('ru')) && 
+      (voice.name.toLowerCase().includes('male') || 
+       voice.name.includes('Yuri') || 
+       voice.name.includes('Maxim') ||
+       voice.name.includes('Google русский'))
     );
     
-    if (russianVoice) {
-      utterance.voice = russianVoice;
+    if (maleVoice) {
+      utterance.voice = maleVoice;
+    } else {
+      const anyRussianVoice = voices.find(voice => 
+        voice.lang.includes('ru-RU') || voice.lang.includes('ru')
+      );
+      if (anyRussianVoice) {
+        utterance.voice = anyRussianVoice;
+      }
     }
     
     speechSynthesis.speak(utterance);
