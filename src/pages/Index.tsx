@@ -30,17 +30,17 @@ const Index = () => {
 
   const speak = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-GB';
+    utterance.lang = 'ru-RU';
     utterance.rate = 0.9;
-    utterance.pitch = 0.9;
+    utterance.pitch = 0.85;
     
     const voices = speechSynthesis.getVoices();
-    const britishVoice = voices.find(voice => 
-      voice.lang.includes('en-GB') || voice.name.includes('British') || voice.name.includes('Daniel')
+    const russianVoice = voices.find(voice => 
+      voice.lang.includes('ru-RU') || voice.lang.includes('ru') || voice.name.includes('Russian')
     );
     
-    if (britishVoice) {
-      utterance.voice = britishVoice;
+    if (russianVoice) {
+      utterance.voice = russianVoice;
     }
     
     speechSynthesis.speak(utterance);
@@ -48,8 +48,8 @@ const Index = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setJarvisMessage('Good day, sir. All systems online.');
-      speak('Good day, sir. All systems online.');
+      setJarvisMessage('Добрый день, сэр. Все системы в норме.');
+      speak('Добрый день, сэр. Все системы в норме.');
     }, 1000);
     
     return () => clearTimeout(timer);
@@ -82,17 +82,17 @@ const Index = () => {
     
     if (task && !task.completed) {
       const messages = [
-        'Task completed, sir. Well done.',
-        'Marking as complete, sir.',
-        'Task complete. Moving on.',
-        'Excellent work, sir.'
+        'Задача выполнена, сэр. Отличная работа.',
+        'Отмечаю как выполненное, сэр.',
+        'Задача завершена. Двигаемся дальше.',
+        'Превосходно, сэр.'
       ];
       const randomMessage = messages[Math.floor(Math.random() * messages.length)];
       setJarvisMessage(randomMessage);
       speak(randomMessage);
     } else if (task) {
-      setJarvisMessage('Task reopened, sir.');
-      speak('Task reopened, sir.');
+      setJarvisMessage('Задача возобновлена, сэр.');
+      speak('Задача возобновлена, сэр.');
     }
   };
 
@@ -100,11 +100,11 @@ const Index = () => {
     if (!isListening) {
       setIsListening(true);
       const greetings = [
-        'Yes, sir. I am listening.',
-        'At your service, sir.',
-        'How may I be of assistance?',
-        'I am here, sir.',
-        'Ready when you are, sir.'
+        'Да, сэр. Я слушаю.',
+        'К вашим услугам, сэр.',
+        'Чем могу помочь?',
+        'Я здесь, сэр.',
+        'Готов к работе, сэр.'
       ];
       const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
       setJarvisMessage(randomGreeting);
@@ -112,8 +112,8 @@ const Index = () => {
       
       setTimeout(() => {
         setIsListening(false);
-        setJarvisMessage('Standing by, sir.');
-        speak('Standing by, sir.');
+        setJarvisMessage('Ожидаю команд, сэр.');
+        speak('Ожидаю команд, сэр.');
       }, 4000);
     }
   };
