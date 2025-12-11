@@ -163,6 +163,12 @@ const Index = () => {
 
   const handleVoiceClick = () => {
     if (!isListening && recognition) {
+      try {
+        recognition.abort();
+      } catch (e) {
+        // ignore if not started
+      }
+
       setIsListening(true);
       setUserQuestion('');
       const greetings = [
@@ -188,17 +194,27 @@ const Index = () => {
         }, 500);
       };
 
-      recognition.onerror = () => {
+      recognition.onerror = (event: any) => {
         setIsListening(false);
-        setJarvisMessage('Прошу прощения, не удалось распознать речь, сэр.');
-        speak('Прошу прощения, не удалось распознать речь, сэр.');
+        if (event.error !== 'aborted') {
+          setJarvisMessage('Прошу прощения, не удалось распознать речь, сэр.');
+          speak('Прошу прощения, не удалось распознать речь, сэр.');
+        }
       };
 
       recognition.onend = () => {
         setIsListening(false);
       };
 
-      recognition.start();
+      setTimeout(() => {
+        try {
+          recognition.start();
+        } catch (e) {
+          setIsListening(false);
+          setJarvisMessage('Прошу прощения, возникла техническая проблема, сэр.');
+          speak('Прошу прощения, возникла техническая проблема, сэр.');
+        }
+      }, 100);
     }
   };
 
