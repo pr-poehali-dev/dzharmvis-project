@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,34 @@ interface Reminder {
 
 const Index = () => {
   const [isListening, setIsListening] = useState(false);
+  const [jarvisMessage, setJarvisMessage] = useState('');
+
+  const speak = (text: string) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-GB';
+    utterance.rate = 0.9;
+    utterance.pitch = 0.9;
+    
+    const voices = speechSynthesis.getVoices();
+    const britishVoice = voices.find(voice => 
+      voice.lang.includes('en-GB') || voice.name.includes('British') || voice.name.includes('Daniel')
+    );
+    
+    if (britishVoice) {
+      utterance.voice = britishVoice;
+    }
+    
+    speechSynthesis.speak(utterance);
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setJarvisMessage('Good day, sir. All systems online.');
+      speak('Good day, sir. All systems online.');
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
   const [tasks, setTasks] = useState<Task[]>([
     { id: 1, title: 'Позвонить клиенту по проекту', completed: false },
     { id: 2, title: 'Отправить отчёт руководству', completed: true },
@@ -47,14 +75,47 @@ const Index = () => {
   ]);
 
   const toggleTask = (id: number) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
+    const task = tasks.find(t => t.id === id);
+    setTasks(tasks.map(t => 
+      t.id === id ? { ...t, completed: !t.completed } : t
     ));
+    
+    if (task && !task.completed) {
+      const messages = [
+        'Task completed, sir. Well done.',
+        'Marking as complete, sir.',
+        'Task complete. Moving on.',
+        'Excellent work, sir.'
+      ];
+      const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+      setJarvisMessage(randomMessage);
+      speak(randomMessage);
+    } else if (task) {
+      setJarvisMessage('Task reopened, sir.');
+      speak('Task reopened, sir.');
+    }
   };
 
   const handleVoiceClick = () => {
-    setIsListening(!isListening);
-    setTimeout(() => setIsListening(false), 3000);
+    if (!isListening) {
+      setIsListening(true);
+      const greetings = [
+        'Yes, sir. I am listening.',
+        'At your service, sir.',
+        'How may I be of assistance?',
+        'I am here, sir.',
+        'Ready when you are, sir.'
+      ];
+      const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+      setJarvisMessage(randomGreeting);
+      speak(randomGreeting);
+      
+      setTimeout(() => {
+        setIsListening(false);
+        setJarvisMessage('Standing by, sir.');
+        speak('Standing by, sir.');
+      }, 4000);
+    }
   };
 
   return (
@@ -98,9 +159,9 @@ const Index = () => {
           </div>
         </div>
 
-        {isListening && (
+        {jarvisMessage && (
           <div className="text-center mb-8 animate-fade-in">
-            <p className="text-xl text-secondary font-medium">Слушаю вас...</p>
+            <p className="text-xl text-secondary font-medium italic">"{jarvisMessage}"</p>
           </div>
         )}
 
