@@ -27,6 +27,8 @@ interface Reminder {
 const Index = () => {
   const [isListening, setIsListening] = useState(false);
   const [jarvisMessage, setJarvisMessage] = useState('');
+  const [userQuestion, setUserQuestion] = useState('');
+  const [recognition, setRecognition] = useState<any>(null);
 
   const speak = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -59,6 +61,15 @@ const Index = () => {
   };
 
   useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.lang = 'ru-RU';
+      recognitionInstance.continuous = false;
+      recognitionInstance.interimResults = false;
+      setRecognition(recognitionInstance);
+    }
+
     const timer = setTimeout(() => {
       setJarvisMessage('Добрый день, сэр. Все системы в норме.');
       speak('Добрый день, сэр. Все системы в норме.');
@@ -66,6 +77,48 @@ const Index = () => {
     
     return () => clearTimeout(timer);
   }, []);
+
+  const processCommand = (command: string) => {
+    const lowerCommand = command.toLowerCase();
+    
+    if (lowerCommand.includes('привет') || lowerCommand.includes('здравствуй')) {
+      return 'Добрый день, сэр. Рад вас приветствовать.';
+    }
+    if (lowerCommand.includes('как дела') || lowerCommand.includes('как ты')) {
+      return 'Все системы функционируют в штатном режиме, сэр.';
+    }
+    if (lowerCommand.includes('время') || lowerCommand.includes('который час')) {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      return `Сейчас ${hours} часов ${minutes} минут, сэр.`;
+    }
+    if (lowerCommand.includes('дата') || lowerCommand.includes('какое число') || lowerCommand.includes('сегодня')) {
+      const now = new Date();
+      const date = now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+      return `Сегодня ${date}, сэр.`;
+    }
+    if (lowerCommand.includes('задач') || lowerCommand.includes('дел')) {
+      const completed = tasks.filter(t => t.completed).length;
+      const total = tasks.length;
+      return `У вас ${total} задач, выполнено ${completed}, сэр.`;
+    }
+    if (lowerCommand.includes('встреч') || lowerCommand.includes('событий') || lowerCommand.includes('календарь')) {
+      const todayEvents = events.filter(e => e.date === 'Сегодня').length;
+      return `На сегодня запланировано ${todayEvents} встреч, сэр.`;
+    }
+    if (lowerCommand.includes('напоминан')) {
+      return `У вас ${reminders.length} активных напоминаний, сэр.`;
+    }
+    if (lowerCommand.includes('спасибо')) {
+      return 'Всегда пожалуйста, сэр. Рад быть полезным.';
+    }
+    if (lowerCommand.includes('кто ты') || lowerCommand.includes('что ты')) {
+      return 'Я Джарвис. Ваш персональный ассистент, сэр.';
+    }
+    
+    return 'Прошу прощения, сэр. Я не совсем понял ваш вопрос. Попробуйте переформулировать.';
+  };
   const [tasks, setTasks] = useState<Task[]>([
     { id: 1, title: 'Позвонить клиенту по проекту', completed: false },
     { id: 2, title: 'Отправить отчёт руководству', completed: true },
@@ -109,8 +162,9 @@ const Index = () => {
   };
 
   const handleVoiceClick = () => {
-    if (!isListening) {
+    if (!isListening && recognition) {
       setIsListening(true);
+      setUserQuestion('');
       const greetings = [
         'Да, сэр. Я слушаю.',
         'К вашим услугам, сэр.',
@@ -121,12 +175,30 @@ const Index = () => {
       const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
       setJarvisMessage(randomGreeting);
       speak(randomGreeting);
-      
-      setTimeout(() => {
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setUserQuestion(transcript);
         setIsListening(false);
-        setJarvisMessage('Ожидаю команд, сэр.');
-        speak('Ожидаю команд, сэр.');
-      }, 4000);
+        
+        const response = processCommand(transcript);
+        setTimeout(() => {
+          setJarvisMessage(response);
+          speak(response);
+        }, 500);
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+        setJarvisMessage('Прошу прощения, не удалось распознать речь, сэр.');
+        speak('Прошу прощения, не удалось распознать речь, сэр.');
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.start();
     }
   };
 
@@ -171,11 +243,18 @@ const Index = () => {
           </div>
         </div>
 
-        {jarvisMessage && (
-          <div className="text-center mb-8 animate-fade-in">
-            <p className="text-xl text-secondary font-medium italic">"{jarvisMessage}"</p>
-          </div>
-        )}
+        <div className="text-center mb-8 min-h-[80px] flex flex-col justify-center">
+          {userQuestion && (
+            <p className="text-lg text-muted-foreground mb-2 animate-fade-in">
+              Вы: "{userQuestion}"
+            </p>
+          )}
+          {jarvisMessage && (
+            <p className="text-xl text-secondary font-medium italic animate-fade-in">
+              "{jarvisMessage}"
+            </p>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card className="shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in border-2" style={{ animationDelay: '0.2s' }}>
